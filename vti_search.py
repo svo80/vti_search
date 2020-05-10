@@ -32,7 +32,7 @@ async def main():
     opt = argparse.ArgumentParser(epilog = get_header())
 
     opt.add_argument("-q", "--query", default="", dest="query",
-        help="VirusTotal Intelligence query.")
+        help="Run a VirusTotal Intelligence search query.")
     
     opt.add_argument("-l", "--limit", type=int, default=20, dest="limit",
         help="Limits the number of samples to return.")

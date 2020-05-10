@@ -51,31 +51,31 @@ usage: vti_search.py [-h] [-q QUERY] [-l LIMIT] [--logfile LOG]
                      [--no-behavior] [-v] [--csv]
 
 optional arguments:
-  -h, --help            				Show this help message and exit
+  -h, --help                          Show this help message and exit
 
-  -q QUERY, --query QUERY   			VirusTotal Intelligence query.
+  -q QUERY, --query QUERY             Run a VirusTotal Intelligence search query.
 
-  -l LIMIT, --limit LIMIT  				Limits the number of samples to return.
+  -l LIMIT, --limit LIMIT             Limits the number of samples to return.
 
-  --logfile LOG         				Name of the log file.
+  --logfile LOG                       Name of the log file.
 
-  --download-dir DOWNLOAD_DIR			Name of the directory where retrieved information will
-                        				be stored in.
+  --download-dir DOWNLOAD_DIR         Name of the directory where retrieved information will
+                                      be stored in.
 
-  -d, --download        				If set, also downloads samples from VirusTotal that
-                        				are referenced in an Intelligence search.
+  -d, --download                      If set, also downloads samples from VirusTotal that
+                                      are referenced in an Intelligence search.
 
-  -f SAMPLE_FILE, --file SAMPLE_FILE	Downloads samples that are referenced in a file.
+  -f SAMPLE_FILE, --file SAMPLE_FILE  Downloads samples that are referenced in a file.
 
-  --no-behavior         				If set, does not download behavior reports for
-                        				samples.
+  --no-behavior                       If set, does not download behavior reports for
+                                      samples.
 
-  -v, --verbose         				If set, display verbose information about reports. Use
-                        				-vvv to see detailed scan results.
+  -v, --verbose                       If set, display verbose information about reports. Use
+                                      -vvv to see detailed scan results.
 
-  -w, --workers WORKERS                 Number of concurrent workers.
+  -w, --workers WORKERS               Number of concurrent workers.
 
-  --csv                 				If set, display results as comma-separated values.
+  --csv                               If set, display results as comma-separated values.
 ```
 
 In the majority of cases, VTISearch will be executed with the `-q` (`--query`) parameter. This query is sent to VirusTotal via the `v3` API. Respective samples will not be downloaded by default. However, this procedure can be easily activated with the `-d` parameter.
@@ -112,17 +112,20 @@ The following queries are solely for demonstration purposes to illustrate search
 $ python3 vti_search.py -q "ls:2020-05-01+ positives:5+ positives:10-" -v --no-behavior
 ```
 
+
 2. Show PDF documents in German that were delivered as an email attachment and contain an embedded JavaScript.
 
 ```
 $ python3 vti_search.py -q "tag:attachment type:pdf lang:german tag:js-embedded"
 ```
 
+
 3. Show signed executables with a size of less than 300KB that were detected by more than five vendors.
 
 ```bash
 $ python3 vti_search.py -q "size:300KB- positives:5+ tag:signed type:peexe"
 ```
+
 
 4. Show up to five samples, representing Microsoft Office documents that execute code upon opening and  likely set an AutoRun key for persistency.
 
@@ -199,22 +202,21 @@ Written by Stefan Voemel.
 ## File Structure
 
 ```bash
-├── downloads				Program data
+├── downloads            Program data
 │   └── <timestamp>
-│       ├── log.txt			Detailed log file with program runtime messages
-│       ├── network.csv		Network indicators
-│       ├── reports/		Directory for behavioral reports
-│       ├── samples/		Directory for malware samples
-│       ├── samples.txt		List of malware samples in scope
-│       └── search.csv		Results of the Intelligence search in CSV format
+│       ├── log.txt      Detailed log file with program runtime messages
+│       ├── network.csv  Network indicators
+│       ├── reports/     Directory for behavioral reports
+│       ├── samples/     Directory for malware samples
+│       ├── samples.txt  List of malware samples in scope
+│       └── search.csv   Results of the Intelligence search in CSV format
 │   
-├── lib						Program libraries
+├── lib                  Program libraries
 │   ├── auxiliary.py
 │   ├── sandboxes.py
 │   └── vt.py
 ├── README.md
-└── vti_search.py			Main program file
-
+└── vti_search.py        Main program file
 ```
 
 
