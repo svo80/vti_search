@@ -193,7 +193,7 @@ class VirusTotal_Search():
         """
         
         async with vt.Client(self.options["virustotal"]) as client:
-            self.options["auxiliary"].log("Running intelligence query: {0}".format(self.options["query"]), level = "DEBUG")
+            self.options["auxiliary"].log("Running intelligence query: {0}".format(self.options["query"]))
             it = client.iterator('/intelligence/search',  params={'query': self.options["query"]}, limit=self.options["limit"])
             
             sample_log = os.path.join(self.options["download_dir"], "samples.txt")
@@ -256,9 +256,10 @@ class VirusTotal_Search():
 
 
     async def get_heartbeat(self):
+        """ Periodically print a status message of the queue to indicate the number of pending tasks
+        """
 
         while True:
-
             if (self.sample_queue.qsize() > 0) or (self.behavior_queue.qsize() > 0):
                 sys.stdout.write("\033[94m[Queue] Samples: {0:03d} - Reports: {1:03d}\033[0m\r".format(self.sample_queue.qsize(), self.behavior_queue.qsize()))
                 sys.stdout.flush()
@@ -269,26 +270,25 @@ class VirusTotal_Search():
         """ Retrieves a behavior report from VirusTotal
             (The behavior report can consist of a result list from multiple sandboxes)
 
-            :param sample:      A sample (File) object
             :return:            True if the report was successfully downloaded or was successfully
                                 read from disk (if existing), otherwise False
         """
 
         async with vt.Client(self.options["virustotal"]) as client:
             while not self.behavior_queue.empty():
-                #print("Queue: {0}".format(self.behavior_queue.qsize()))
                 sample = await self.behavior_queue.get()
-                report_file = os.path.join(self.options["reports_dir"], sample.id)
+                sample_id = sample if isinstance(sample, str) else sample.id
+                
+                # check if a sample object rather than a hash was provided
+                report_file = os.path.join(self.options["reports_dir"], sample_id) 
                 report_retrieved = False
 
                 # if the report file is not on disk yet, it is downloaded
                 if not os.path.isfile(report_file):
-                    url = 'files/{0}/behaviours'.format(sample.id)
+                    url = 'files/{0}/behaviours'.format(sample_id)
                     result = self.execute_request(url)
 
                     if result is not None:
-                        report_file = os.path.join(self.options["reports_dir"], sample.id)
-
                         try:
                             with open(report_file, "w") as f:
                                 json.dump(result, f)
@@ -299,7 +299,7 @@ class VirusTotal_Search():
                             self.options["auxiliary"].log("Error while saving behaviorial report: {0} - {1}".format(report_file, err), level = "ERROR")
                 else:
                     # the report has already been downloaded and is stored on disk
-                    self.options["auxiliary"].log("Behavior report for sample already exists on disk and is not downloaded again {0}".format(sample.id), level = "DEBUG")
+                    self.options["auxiliary"].log("Behavior report for sample already exists on disk and is not downloaded again: {0}".format(sample_id), level = "DEBUG")
             
                     try:  
                         with open(report_file, "r") as f:
@@ -308,8 +308,12 @@ class VirusTotal_Search():
                         report_retrieved = True
                     except (IOError, json.JSONDecodeError) as err:
                         self.options["auxiliary"].log("Error while reading behaviorial report: {0} - {1}".format(report_file, err), level = "ERROR")
-            
-                if report_retrieved:
+
+                # only parse behavior reports if an Intelligence search was previously run
+                # (if we are reading hashes from a file, we do not have context information about
+                #  the artifact)
+                # TODO: explicitly check for File object
+                if report_retrieved and not isinstance(sample, str):
                     sandbox = Sandbox_Parser(self.options, result)
                     sandbox.parse_report(sample)
 
@@ -327,6 +331,7 @@ class VirusTotal_Search():
         sha256 = re.compile(r"([a-fA-F\d]{64})")
 
         samples = []
+        tasks = []
         with open(filename, "r") as f:
             for data in f:
                 data = data.strip("\n ")
@@ -335,9 +340,20 @@ class VirusTotal_Search():
                     # sample is appearing for the first time, add it to the queue
                     sample_path = os.path.join(self.options["samples_dir"], data)
                     if data not in samples:
-                        await self.sample_queue.put(data)
+                        if self.options["download_samples"]  : await self.sample_queue.put(data)
+                        if self.options["download_behavior"] : await self.behavior_queue.put(data)
                         samples.append(data)
                         self.auxiliary.log(data)
+
+        for worker in range(self.options["workers"]):
+            asyncio.create_task(self.get_heartbeat())
+            if self.options["download_behavior"]: tasks.append(asyncio.create_task(self.get_behavior_report()))
+            if self.options["download_samples"]: tasks.append(asyncio.create_task(self.get_sample()))
+                    
+        await asyncio.gather(*tasks)
+        await self.behavior_queue.join()
+        await self.sample_queue.join()
+        for task in tasks: task.cancel()
 
 
     async def get_sample(self):
@@ -352,7 +368,6 @@ class VirusTotal_Search():
         
         async with vt.Client(self.options["virustotal"]) as client:
             while not self.sample_queue.empty():
-                #print("Queue: {0}".format(self.sample_queue.qsize()))
                 try:
                     sample_id = await self.sample_queue.get()
                     # check if a sample object rather than a hash was provided
@@ -364,7 +379,7 @@ class VirusTotal_Search():
                     # TODO: Possibly check more than purely the filename to be sure the content was previously
                     #       correctly downloaded as well?  
                     if os.path.isfile(sample_path): 
-                        self.options["auxiliary"].log("Sample already exists on disk and is not downloaded again {0}".format(sample_id), level = "DEBUG")
+                        self.options["auxiliary"].log("Sample already exists on disk and is not downloaded again: {0}".format(sample_id), level = "DEBUG")
                         self.sample_queue.task_done()
                         continue
 

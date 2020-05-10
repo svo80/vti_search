@@ -12,7 +12,7 @@ from lib import auxiliary, vt
 meta =  {
             "title"     :   "VTISearch - VirusTotal Intelligence Search",
             "note"      :   "Written by Stefan Voemel.",
-            "version"   :   "0.1.0",
+            "version"   :   "0.1.1",
         }
 
 
@@ -64,8 +64,8 @@ async def main():
     options = vars(opt.parse_args())
    
     if (len(options["query"]) == 0) and (len(options["sample_file"]) == 0):
-        print("Please either specify a VirusTotal Intelligece search query or a file with sample hashes.")
-        sys.exit(1)
+        print("Please either specify a VirusTotal Intelligence search query (-q) or a file with sample hashes (-f).\n")
+        sys.exit(-1)
 
     # create a new directory based on the current timestamp that will store all query- and 
     # download-related information
@@ -107,14 +107,17 @@ async def main():
        
     # download samples that are referenced in a file
     if (len(options["sample_file"]) > 0) and (os.path.isfile(options["sample_file"])):
+        if not options["download_samples"]:
+            options["download_samples"] = True
+            options["auxiliary"].log("Sample download is automatically enabled.\n", level = "WARNING")
+
+        if options["csv"]:
+            options["csv"] = False
+            options["auxiliary"].log("CSV export is only supported in Intelligence search mode.\n(We do not have any context information about a hash without performing an explicit lookup.)\n", level = "WARNING")
+
         tasks.append(asyncio.create_task(virustotal.download_samples(options["sample_file"])))
         
-        for worker in range(options["workers"]):
-            tasks.append(asyncio.create_task(virustotal.get_sample()))
-        
     await asyncio.gather(*tasks)
-    await virustotal.sample_queue.join()
-    await virustotal.behavior_queue.join()
     for task in tasks:
         task.cancel()
 
@@ -124,4 +127,10 @@ async def main():
 
 
 if __name__ == "__main__":
+    
+    # check for Python 3.7+
+    if (sys.version_info.major != 3) or ((sys.version_info.major == 3) and (sys.version_info.minor < 7)):
+        print("Attention: Python 3.7 or higher is required for this program.\nPlease upgrade your Python instance.\n")
+        sys.exit(-1)
+    
     asyncio.run(main())

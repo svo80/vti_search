@@ -59,8 +59,6 @@ class Sandbox_Parser():
 
                             traffic_objects.append(item["url"])
 
-
             if len(traffic_objects) > 0: self.options["auxiliary"].log("", level = verbose_level)
- 
                
 

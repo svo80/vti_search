@@ -4,7 +4,7 @@ VTISearch is a small utility for running a VirusTotal Intelligence search query.
 
 The program leverages v3 of the VirusTotal API. Please note that for some features (including Intelligence Search), you need a private API key. The API key is requested upon the first start and saved to the keyring of the system for security reasons.
 
-By default, VTISearch retrieves information about the first 50 samples that are associated with the search query. However, results for up to 300 samples can be requested as well with the help of the `-l` (`--limit`) parameter.
+By default, VTISearch retrieves information about the first 20 samples that are associated with the search query. However, results for up to 300 samples can be requested as well with the help of the `-l` (`--limit`) parameter.
 
 Information includes the list of sample hashes (MD5, SHA1, SHA256, and - if existing - the VirusTotal *vhash* similarity hash), the type and size of the artifact, dates of (first and last) submission, and also detection statistics.
 
