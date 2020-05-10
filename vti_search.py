@@ -12,7 +12,7 @@ from lib import auxiliary, vt
 meta =  {
             "title"     :   "VTISearch - VirusTotal Intelligence Search",
             "note"      :   "Written by Stefan Voemel.",
-            "version"   :   "0.1.1",
+            "version"   :   "0.1.3",
         }
 
 
