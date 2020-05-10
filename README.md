@@ -25,7 +25,7 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * All information is categorized in different sub-folders. Detailed logs facilitate post-processing.
 * Results can be exported in CSV format for subsequent relationship visualization with, e.g., Maltego.
 
-(\* Behavior report parsing is still mostly sequential and needs to be updated.)
+(\* Behavior report parsing is still mostly sequential and needs to be updated. If you requesting information about a larger number of samples and do not see any output on the screen, please remain patient for the moment. The program is likely working in the background, and this issue will be fixed soon. Please also feel free to run `tail -f` on the log file.)
 
 
 ## Requirements 

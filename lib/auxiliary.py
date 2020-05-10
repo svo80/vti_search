@@ -111,28 +111,26 @@ class Auxiliary():
         # saves a dictionary of file handles to CSV files
         self.options["csv_files"] = {}
 
-        #if len(self.options["query"]) > 0:
         # CSV file for Intelligence search results
         filename = os.path.join(self.options["download_dir"], "search.csv")
         csv_search = open(filename, "w")
 
         if self.options["verbose"] < 3:
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "First submitted on", "Last submitted on", "Times submitted", "Malicious", "Suspicious", "Undetected"]
+            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "First submitted on", "Last submitted on", "Times submitted", "Malicious", "Suspicious", "Undetected"]
         else:
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Vendor", "Signature", "Result", "Signature Database"]
+            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
 
         line = "#"
         for field in fields: line += "{0};".format(field)
         csv_search.write("{0}\n".format(line[:-1]))
         self.options["csv_files"]["search"] = csv_search
         
-        
         # CSV file for network indicators
         if self.options["download_behavior"]:
             filename = os.path.join(self.options["download_dir"], "network.csv")
             csv_network = open(filename, "w")
 
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Host", "Port", "URL"]
+            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Host", "Port", "URL"]
 
             line = "#"
             for field in fields: line += "{0};".format(field)

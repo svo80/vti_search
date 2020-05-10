@@ -29,6 +29,7 @@ class Sandbox_Parser():
             for sandbox in self.report:
                 if "attributes" not in sandbox or "sandbox_name" not in sandbox["attributes"]: continue
                 data = sandbox["attributes"]
+                attributes = dir(sample)
                 
                 # extract unique network indicators across all sandbox reports
                 if "ip_traffic" in data:
@@ -37,8 +38,19 @@ class Sandbox_Parser():
                         if "{0}:{1}".format(item["destination_ip"], item["destination_port"]) not in traffic_objects:
                             if self.options["csv"]:
                                 line = ""
-                                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag"]:
-                                    line += "{0};".format(getattr(sample, value)) if value in dir(sample) else ";"
+                                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
+                                    if value not in attributes:
+                                        line += ";"
+                                        continue
+                                    
+                                    if isinstance(getattr(sample, value), list):
+                                        list_items = ""
+                                        for list_item in getattr(sample, value):
+                                            list_items += "{0}, ".format(list_item)
+                                        line += "\"{0}\";".format(list_items[:-2])
+                                    else:
+                                        line += "{0};".format(getattr(sample, value))
+
                                 for value in ["destination_ip", "destination_port", "url"]:
                                     line += "{0};".format(item[value]) if (value in item) and (item[value] is not None) else ";"
                                 self.options["csv_files"]["network"].write("{0}\n".format(line[:-1]))
@@ -53,8 +65,19 @@ class Sandbox_Parser():
                         if item["url"] not in traffic_objects:
                             if self.options["csv"]:
                                 line = ""
-                                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag"]:
-                                    line += "{0};".format(getattr(sample, value)) if value in dir(sample) else ";"
+                                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
+                                    if value not in attributes:
+                                        line += ";"
+                                        continue
+                                    
+                                    if isinstance(getattr(sample, value), list):
+                                        list_items = ""
+                                        for list_item in getattr(sample, value):
+                                            list_items += "{0}, ".format(list_item)
+                                        line += "\"{0}\";".format(list_items[:-2])
+                                    else:
+                                        line += "{0};".format(getattr(sample, value))
+
                                 for value in ["destination_ip", "destination_port", "url"]:
                                     line += "{0};".format(item[value]) if (value in item) and (item[value] is not None) else ";"
                                 self.options["csv_files"]["network"].write("{0}\n".format(line[:-1]))
@@ -68,7 +91,8 @@ class Sandbox_Parser():
                 with open(filename, "a") as f:
                     [ f.write("{0}\n".format(item)) for item in traffic_objects ]
             elif (len(traffic_objects) > 0) and (os.path.exists(filename)):
-                self.options["auxiliary"].log("Network indicator report for sample already exists on dis: {0}".format(sample.id), level = "DEBUG")
+                self.options["auxiliary"].log("Network indicator report for sample already exists on disk: {0}".format(sample.id), level = "DEBUG")
             else:
-                self.options["auxiliary"].log("No network indicators found for sample: {0}".format(sample.id), level = "DEBUG")
+                #self.options["auxiliary"].log("No network indicators found for sample: {0}".format(sample.id), level = "DEBUG")
+                pass
 

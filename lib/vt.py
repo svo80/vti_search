@@ -59,6 +59,7 @@ KEYWORD_MAP = {
         "unique_sources"        :   "Unique sources",
         "size"                  :   "Size",
         "type_tag"              :   "Type Tag",
+        "tags"                  :   "Tag(s)",
         "magic"                 :   "Type",
 
         # attributes for scan results
@@ -105,8 +106,6 @@ class VirusTotal_Search():
         """
 
         results = sample.last_analysis_results
-
-        verbose_level = "INFO" if self.options["verbose"] >= required_verbose_level else "DEBUG"
         for item in results:
             engine = results[item]
             # category can be, e.g., suspicious, malicious, undetected, etc. 
@@ -120,8 +119,19 @@ class VirusTotal_Search():
 
             if self.options["csv"] and self.options["verbose"] >= 3:
                 line = ""
-                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag"]: 
-                    line += "{0};".format(getattr(sample, value)) if value in dir(sample) else ";"
+                attributes = dir(sample)
+                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
+                    if value not in attributes:
+                        line += ";"
+                        continue
+
+                    if isinstance(getattr(sample, value), list):
+                        list_items = ""
+                        for item in getattr(sample, value):
+                            list_items += "{0}, ".format(item)
+                        line += "\"{0}\";".format(list_items[:-2])
+                    else:
+                        line += "{0};".format(getattr(sample, value))
                 for value in ["engine_name", "result", "category", "engine_update"]:
                     line += "{0};".format(engine[value]) if engine[value] is not None else ";"
                 
@@ -155,7 +165,14 @@ class VirusTotal_Search():
                     if self.options["verbose"] >= required_verbose_level: print(string)
                     if file_handle is not None: file_handle.write("{0}\n".format(string))
             elif isinstance(getattr(sample, value), list):
-                self.auxiliary.log("Unparsed list: {0} - {1} ({2})".format(sample.sha256, getattr(sample, value), type(getattr(sample, value))), level = "ERROR")
+                line = ""
+                for item in getattr(sample, value):
+                    line += "{0}, ".format(item)
+                label = KEYWORD_MAP[value] if value in KEYWORD_MAP else value
+
+                string = "{0}{1:28}{2}".format(" " * 2, label + ":", line[:-2])
+                if self.options["verbose"] >= required_verbose_level: print(string)
+                if file_handle is not None: file_handle.write("{0}\n".format(string))
             else:
                 label = KEYWORD_MAP[value] if value in KEYWORD_MAP else value
                 string = "{0}{1:28}{2}".format(" " * 2, label + ":", getattr(sample, value))
@@ -186,14 +203,31 @@ class VirusTotal_Search():
         if self.options["csv"] and self.options["verbose"] < 3:
             line = ""
             attributes = dir(sample)
-            for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "first_submission_date", "last_submission_date", "times_submitted", "malicious", "suspicious", "undetected"]: 
-                line += "{0};".format(getattr(sample, value)) if value in attributes else ";"
+            for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags", "first_submission_date", "last_submission_date", "times_submitted"]: 
+                if value not in attributes:
+                    line += ";"
+                    continue
+
+                if isinstance(getattr(sample, value), list):
+                    list_items = ""
+                    for item in getattr(sample, value):
+                        list_items += "{0}, ".format(item)
+                    line += "\"{0}\";".format(list_items[:-2])
+                else:
+                    line += "{0};".format(getattr(sample, value))
+
+            for value in ["malicious", "suspicious", "undetected"]:
+                if (("last_analysis_stats" in attributes) and (value in sample.last_analysis_stats.keys())):
+                    line += "{0};".format(sample.last_analysis_stats[value])
+                else:
+                    line += ";"
+
             self.options["csv_files"]["search"].write("{0}\n".format(line[:-1]))
-        
+       
         values = ["md5", "sha1", "vhash"]
         self.display_values(values, sample, required_verbose_level = 1, file_handle = file_handle)
         
-        values = ["magic", "type_tag", "size"]
+        values = ["magic", "type_tag", "tags", "size"]
         self.display_values(values, sample, required_verbose_level = 1, file_handle = file_handle)
 
         values = ["first_submission_date", "last_submission_date", "times_submitted", "unique_sources"]
@@ -252,6 +286,8 @@ class VirusTotal_Search():
 
             :return:        JSON output that is contained in the 'data' field
         """
+        
+        # TODO: Method must be updated to support asynchronous downloading
 
         url = requests.compat.urljoin(self.site["url"], request)
                 
@@ -269,6 +305,7 @@ class VirusTotal_Search():
             result = result["data"]
         except requests.exceptions.HTTPError as err:
             # the item is not available or could not be read
+            # (respective result will be logged by the parent method)
             pass
         except requests.exceptions.ConnectionError:
             self.auxiliary.log("Network unreable.", level = "ERROR")
@@ -283,9 +320,8 @@ class VirusTotal_Search():
         """
 
         while True:
-            if (self.info_queue.qsize() > 0) or (self.sample_queue.qsize() > 0) or (self.behavior_queue.qsize() > 0):
-                sys.stdout.write("\033[94m[Queue] Sample Reports: {0:03d} - Artifacts: {1:03d} - Behavior Reports: {2:03d}\033[0m\r".format(self.info_queue.qsize(), self.sample_queue.qsize(), self.behavior_queue.qsize()))
-                sys.stdout.flush()
+            sys.stdout.write("\033[94m[Queue] Sample Reports: {0:03d} - Artifacts: {1:03d} - Behavior Reports: {2:03d}\033[0m\r".format(self.info_queue.qsize(), self.sample_queue.qsize(), self.behavior_queue.qsize()))
+            sys.stdout.flush()
             await asyncio.sleep(1)
 
 

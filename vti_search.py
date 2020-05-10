@@ -112,10 +112,6 @@ async def main():
             options["download_samples"] = True
             options["auxiliary"].log("Sample download is automatically enabled.\n", level = "WARNING")
 
-        #if options["csv"]:
-        #    options["csv"] = False
-        #    options["auxiliary"].log("CSV export is only supported in Intelligence search mode.\n(We do not have any context information about a hash without performing an explicit lookup.)\n", level = "WARNING")
-
         tasks.append(asyncio.create_task(virustotal.download_samples(options["sample_file"])))
         
     await asyncio.gather(*tasks)
