@@ -21,8 +21,6 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * Information includes meta data as well as detailed scanning and detection results upon request.
 * Supports the automatic download of associated samples and behavioral (dynamic analysis) reports.
 * Behavioral reports are automatically scanned for network-based Indicators of Compromise (IOCs).
-* Automatic (light) sanitization when displaying URLs on the command line to prevent accidental infection.
-  (Append the --csv parameter to see the raw data in the network.csv file.)
 * Use of multiple workers to speed up operations.\*
 * All information is categorized in different sub-folders. Detailed logs facilitate post-processing.
 * Results can be exported in CSV format for subsequent relationship visualization with, e.g., Maltego.
@@ -129,7 +127,7 @@ $ python3 vti_search.py -q "size:300KB- positives:5+ tag:signed type:peexe"
 ```
 
 
-4. Show up to five samples, representing Microsoft Office documents that execute code upon opening and  likely set an AutoRun key for persistency.
+4. Show up to five samples, representing Microsoft Office documents that execute code upon opening and likely set an AutoRun key for persistence.
 
 ```bash
 $ python3 vti_search.py -q "behavior:'currentversion\run\' type:docx tag:auto-open" -l 5
@@ -206,9 +204,10 @@ Written by Stefan Voemel.
 ```bash
 ├── downloads            Program data
 │   └── <timestamp>
+│       ├── behavior/    Directory for behavioral reports
 │       ├── log.txt      Detailed log file with program runtime messages
 │       ├── network.csv  Network indicators
-│       ├── reports/     Directory for behavioral reports
+│       ├── reports/     Directory for summary reports and network indicators (*.ioc)
 │       ├── samples/     Directory for malware samples
 │       ├── samples.txt  List of malware samples in scope
 │       └── search.csv   Results of the Intelligence search in CSV format
@@ -226,4 +225,4 @@ Written by Stefan Voemel.
 
 I am not a professional developer or software engineer, and this program should be seen as a small helper tool. While I do enjoy periodically writing smaller utilities in my free time for Incident Response, malware analysis, and Threat Intelligence scenarios, I very rarely upload any of them. 
 
-The only reason why I did so for this program is, because the number of alternatives for the v3 VirusTotal API is currently still very much limited. This being said, I spend the vast majority of my time (i.e., my professional life) with leading security teams and offering strategic advice and guidance on a higher level. As such, if you believe that the code is \<beep\>, you are probably right.
+The only reason why I did so for this program is, because the number of alternatives for the v3 VirusTotal API is currently still very much limited. This being said, I spend the vast majority of my time (i.e., my professional life) with leading security teams and offering strategic advice and guidance on a higher level. As such, if you believe that the code is *\<beep\>*, you are probably right.

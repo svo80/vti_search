@@ -75,13 +75,14 @@ async def main():
 
         options["download_dir"] = os.path.join(module_path, "downloads", timestamp)
 
+    options["info_dir"] = os.path.join(options["download_dir"], "reports")
     options["samples_dir"] = os.path.join(options["download_dir"], "samples")
-    options["reports_dir"] = os.path.join(options["download_dir"], "reports")
+    options["reports_dir"] = os.path.join(options["download_dir"], "behavior")
     options["log"] = os.path.join(options["download_dir"], options["log"])
 
     # create directories if necessary
     created = True
-    for directory in ["download_dir", "samples_dir", "reports_dir"]:
+    for directory in ["download_dir", "info_dir", "samples_dir", "reports_dir"]:
         try:
             os.makedirs(options[directory])
         except FileExistsError as err:
@@ -111,9 +112,9 @@ async def main():
             options["download_samples"] = True
             options["auxiliary"].log("Sample download is automatically enabled.\n", level = "WARNING")
 
-        if options["csv"]:
-            options["csv"] = False
-            options["auxiliary"].log("CSV export is only supported in Intelligence search mode.\n(We do not have any context information about a hash without performing an explicit lookup.)\n", level = "WARNING")
+        #if options["csv"]:
+        #    options["csv"] = False
+        #    options["auxiliary"].log("CSV export is only supported in Intelligence search mode.\n(We do not have any context information about a hash without performing an explicit lookup.)\n", level = "WARNING")
 
         tasks.append(asyncio.create_task(virustotal.download_samples(options["sample_file"])))
         

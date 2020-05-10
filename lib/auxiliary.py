@@ -111,21 +111,21 @@ class Auxiliary():
         # saves a dictionary of file handles to CSV files
         self.options["csv_files"] = {}
 
-        if len(self.options["query"]) > 0:
-            # CSV file for Intelligence search results
-            filename = os.path.join(self.options["download_dir"], "search.csv")
-            csv_search = open(filename, "w")
+        #if len(self.options["query"]) > 0:
+        # CSV file for Intelligence search results
+        filename = os.path.join(self.options["download_dir"], "search.csv")
+        csv_search = open(filename, "w")
 
-            if self.options["verbose"] < 3:
-                fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "First submitted on", "Last submitted on", "Times submitted", "Malicious", "Suspicious", "Undetected"]
-            else:
-                fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Vendor", "Signature", "Result", "Signature Database"]
+        if self.options["verbose"] < 3:
+            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "First submitted on", "Last submitted on", "Times submitted", "Malicious", "Suspicious", "Undetected"]
+        else:
+            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Vendor", "Signature", "Result", "Signature Database"]
 
-            line = "#"
-            for field in fields: line += "{0};".format(field)
-            csv_search.write("{0}\n".format(line[:-1]))
-            self.options["csv_files"]["search"] = csv_search
-            
+        line = "#"
+        for field in fields: line += "{0};".format(field)
+        csv_search.write("{0}\n".format(line[:-1]))
+        self.options["csv_files"]["search"] = csv_search
+        
         
         # CSV file for network indicators
         if self.options["download_behavior"]:

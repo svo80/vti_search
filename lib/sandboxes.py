@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
 import sys
+import os.path
 
 class Sandbox_Parser():
 
         def __init__(self, options, report):
+            """ 
+                :param report: A (collection of) sandbox report(s) in JSON format
+            """
 
             self.options = options
             self.report = report
@@ -12,7 +16,7 @@ class Sandbox_Parser():
             self.auxiliary = options["auxiliary"]
 
 
-        def parse_report(self, sample, required_verbose_level = 3):
+        def parse_report(self, sample, required_verbose_level = 1):
             """ Parses the (list of) sandbox report(s) that are defined in a dynamic analysis 
                 collection, and extracts the network indicators
 
@@ -21,17 +25,16 @@ class Sandbox_Parser():
 
             traffic_objects = []
             verbose_level = "INFO" if self.options["verbose"] >= required_verbose_level else "DEBUG"
+            
             for sandbox in self.report:
                 if "attributes" not in sandbox or "sandbox_name" not in sandbox["attributes"]: continue
                 data = sandbox["attributes"]
                 
-                # extract network indicators
+                # extract unique network indicators across all sandbox reports
                 if "ip_traffic" in data:
                     traffic = data["ip_traffic"]
                     for item in traffic:
-                        if item["destination_ip"] not in traffic_objects:
-                            self.options["auxiliary"].log("{0}{1:27} {2}:{3}".format(" " * 2, "[Host]", item["destination_ip"], item["destination_port"]), level = verbose_level)
-
+                        if "{0}:{1}".format(item["destination_ip"], item["destination_port"]) not in traffic_objects:
                             if self.options["csv"]:
                                 line = ""
                                 for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag"]:
@@ -41,14 +44,13 @@ class Sandbox_Parser():
                                 self.options["csv_files"]["network"].write("{0}\n".format(line[:-1]))
 
                             # TODO: Should we only add the host or host:port information?
-                            traffic_objects.append(item["destination_ip"])
+                            traffic_objects.append("{0}:{1}".format(item["destination_ip"], item["destination_port"]))
 
+                # extract unique URLs across all sandbox reports
                 if "http_conversations" in data:
                     traffic = data["http_conversations"]
                     for item in traffic:
                         if item["url"] not in traffic_objects:
-                            self.auxiliary.log("{0}{1:27} {2}".format(" " * 2, "[URL]", item["url"].replace("http", "hxxp")), level = verbose_level)
-
                             if self.options["csv"]:
                                 line = ""
                                 for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag"]:
@@ -59,6 +61,14 @@ class Sandbox_Parser():
 
                             traffic_objects.append(item["url"])
 
-            if len(traffic_objects) > 0: self.options["auxiliary"].log("", level = verbose_level)
-               
+            # if network indicators were extracted, write the information to an indicator report
+            # (unless it is not existing already)
+            filename = os.path.join(self.options["info_dir"], "{0}.ioc".format(sample.id))
+            if (len(traffic_objects) > 0) and (not os.path.exists(filename)): 
+                with open(filename, "a") as f:
+                    [ f.write("{0}\n".format(item)) for item in traffic_objects ]
+            elif (len(traffic_objects) > 0) and (os.path.exists(filename)):
+                self.options["auxiliary"].log("Network indicator report for sample already exists on dis: {0}".format(sample.id), level = "DEBUG")
+            else:
+                self.options["auxiliary"].log("No network indicators found for sample: {0}".format(sample.id), level = "DEBUG")
 
