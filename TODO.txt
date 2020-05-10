@@ -2,3 +2,4 @@ TODO:
 
 - download and parsing of behavior reports should occur asynchronously as well
 - when reading hashses from a file, potentially permit running an explicit lookup in parallel to support verbose levels and behavior report parsing
+- support sort options for Intelligence searches

@@ -1,27 +1,29 @@
 # VTISearch - VirusTotal Intelligence Search
 
-VTISearch is a small utility for running a VirusTotal Intelligence search query. A query can include powerful search modifiers (listed in the [documentation](https://support.virustotal.com/hc/en-us/articles/360001385897-File-search-modifiers)) that permit efficient threat research and hunting operations.
+*VTISearch* is a small utility for running a VirusTotal Intelligence search query. A query can include powerful search modifiers (listed in the [documentation](https://support.virustotal.com/hc/en-us/articles/360001385897-File-search-modifiers)) that permit efficient threat research and hunting operations.
 
 The program leverages v3 of the VirusTotal API. Please note that for some features (including Intelligence Search), you need a private API key. The API key is requested upon the first start and saved to the keyring of the system for security reasons.
 
-By default, VTISearch retrieves information about the first 20 samples that are associated with the search query. However, results for up to 300 samples can be requested as well with the help of the `-l` (`--limit`) parameter.
+By default, *VTISearch* retrieves information about the first 20 samples that are associated with the search query. However, results for up to 300 samples can be requested as well with the help of the `-l` (`--limit`) parameter.
 
 Information includes the list of sample hashes (MD5, SHA1, SHA256, and - if existing - the VirusTotal *vhash* similarity hash), the type and size of the artifact, dates of (first and last) submission, and also detection statistics.
 
 Additional details, e.g., scanning results per vendor, can be displayed when speciying the verbose (`-v`) parameter. Up to three different verbosity levels are supported.
 
-VTISearch is capable of downloading the samples as well as behavioral (dynamic analysis) reports for an Intelligence search. Dynamic analysis reports are also automatically parsed in order to extract network-based Indicators of Compromise (IOCs). 
+*VTISearch* is capable of downloading the samples as well as behavioral (dynamic analysis) reports for an Intelligence search. Dynamic analysis reports are also automatically parsed in order to extract network-based Indicators of Compromise (IOCs). 
 
 When using the `--csv` option, results can be exported in CSV format for subsequent import in, e.g., *Maltego* or other graph visualization programs.
 
 
 ## Features
 
-* Retrieves information for up to 300 artifacts that are related to the search query
-* Information includes meta data as well as detailed scanning and detection results upon request
-* Supports the automatic download of associated samples and behavioral (dynamic analysis) reports
-* Behavioral reports are automatically scanned for network-based Indicators of Compromise (IOCs)
-* Use of multiple workers to speed up operations\*
+* Retrieves information for up to 300 artifacts that are related to the search query.
+* Information includes meta data as well as detailed scanning and detection results upon request.
+* Supports the automatic download of associated samples and behavioral (dynamic analysis) reports.
+* Behavioral reports are automatically scanned for network-based Indicators of Compromise (IOCs).
+* Automatic (light) sanitization when displaying URLs on the command line to prevent accidental infection.
+  (Append the --csv parameter to see the raw data in the network.csv file.)
+* Use of multiple workers to speed up operations.\*
 * All information is categorized in different sub-folders. Detailed logs facilitate post-processing.
 * Results can be exported in CSV format for subsequent relationship visualization with, e.g., Maltego.
 
@@ -78,7 +80,7 @@ optional arguments:
   --csv                               If set, display results as comma-separated values.
 ```
 
-In the majority of cases, VTISearch will be executed with the `-q` (`--query`) parameter. This query is sent to VirusTotal via the `v3` API. Respective samples will not be downloaded by default. However, this procedure can be easily activated with the `-d` parameter.
+In the majority of cases, *VTISearch* will be executed with the `-q` (`--query`) parameter. This query is sent to VirusTotal via the `v3` API. Respective samples will not be downloaded by default. However, this procedure can be easily activated with the `-d` parameter.
 
 ```bash
 $ python3 vti_search.py -q "evil.exe" -d
@@ -136,7 +138,7 @@ $ python3 vti_search.py -q "behavior:'currentversion\run\' type:docx tag:auto-op
 
 ## Data Export and Collaboration
 
-VTISearch supports exporting all information in CSV format. Exported contents are dependent on the verbosity level.
+*VTISearch* supports exporting all information in CSV format. Exported contents are dependent on the verbosity level.
 
 For instance, when specifying the `-vvv` parameter, detailed anti-virus scanning reports will be exported into CSV format. On the other hand, when solely specifying the `-v` parameter, higher level summary statistics will be created.
 
