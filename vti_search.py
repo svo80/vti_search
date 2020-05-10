@@ -112,7 +112,6 @@ async def main():
         for worker in range(options["workers"]):
             tasks.append(asyncio.create_task(virustotal.get_sample()))
         
-
     await asyncio.gather(*tasks)
     await virustotal.sample_queue.join()
     await virustotal.behavior_queue.join()
@@ -125,7 +124,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    #loop = asyncio.get_event_loop()
-    #loop.run_until_complete(main())
-    #loop.close()
     asyncio.run(main())

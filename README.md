@@ -78,7 +78,7 @@ optional arguments:
   --csv                 				If set, display results as comma-separated values.
 ```
 
-In the majority of cases, VTISearch will be executed with the `-q` (`--query`) parameter. This query is sent to VirusTotal via the `v3` API. Respective samples will not be downloaded by default. However, this procedure can be activated with the `-d` parameter.
+In the majority of cases, VTISearch will be executed with the `-q` (`--query`) parameter. This query is sent to VirusTotal via the `v3` API. Respective samples will not be downloaded by default. However, this procedure can be easily activated with the `-d` parameter.
 
 ```bash
 $ python3 vti_search.py -q "evil.exe" -d
@@ -94,7 +94,7 @@ The approaches can also be mixed. For instance, you might want to first check th
 
 Alternatively, you might want to combine the results of an Intelligence search with indicators highlighted in a (third-party) report in order to create a more detailed overview of a specific campaign or operation.
 
-By default, all log files, samples, and reports are stored in a separate directory (identified by its timestamp) that is created at program startup in the `download` folder. If you prefer rather updating an existing directory, you can explicitly set the `--download-dir` parameter.
+By default, all log files, samples, and reports are stored in a separate directory (identified by its timestamp) that is created at program startup in the `downloads` folder. If you prefer rather updating an existing directory, you can explicitly set the `--download-dir` parameter.
 
 For instance, assuming you would like to investigate an APT campaign, you can perform an Intelligence search, retrieve the first 100 results in detailed format, and store all information in a specific folder as follows:
 
@@ -222,4 +222,4 @@ Written by Stefan Voemel.
 
 I am not a professional developer or software engineer, and this program should be seen as a small helper tool. While I do enjoy periodically writing smaller utilities in my free time for Incident Response, malware analysis, and Threat Intelligence scenarios, I very rarely upload any of them. 
 
-The only reason why I did so for this program is, because the number of alternatives for the v3 VirusTotal API is currently still very much limited. This being said, I spend the vast majority of my time (i.e., my professional life) with leading security teams and offering strategic advice and guidance on a higher level. As such, if you believe that the code is <beep>, you are probably right.
+The only reason why I did so for this program is, because the number of alternatives for the v3 VirusTotal API is currently still very much limited. This being said, I spend the vast majority of my time (i.e., my professional life) with leading security teams and offering strategic advice and guidance on a higher level. As such, if you believe that the code is \<beep\>, you are probably right.
