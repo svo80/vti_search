@@ -254,6 +254,7 @@ class VirusTotal_Search():
             sample_log = os.path.join(self.options["download_dir"], "samples.txt")
 
             tasks = []
+            asyncio.create_task(self.get_heartbeat())
             with open(sample_log, "w") as f:
                 # iterate through the result set - each element represents a File object
                 async for obj in it:
@@ -266,7 +267,6 @@ class VirusTotal_Search():
                     self.display_information(obj, sample_report)
             
                 for worker in range(self.options["workers"]):
-                    asyncio.create_task(self.get_heartbeat())
                     if self.options["download_behavior"]: tasks.append(asyncio.create_task(self.get_behavior_report()))
                     if self.options["download_samples"]: tasks.append(asyncio.create_task(self.get_sample()))
                             
@@ -276,43 +276,28 @@ class VirusTotal_Search():
                 for task in tasks: task.cancel()
 
 
-    def execute_request(self, request):
-        """ Generic function for interacting with the VirusTotal API via the requests module
-
-            This function is necessary as the results of not all VirusTotal interfaces can be
-            (apparently) parsed via the iterator or get_object method.
-
+    async def execute_request(self, request):
+        """ Runs an asynchronous call to retreive a behavioral report from VirusTotal
+        
             :param request: The API request to execute
 
             :return:        JSON output that is contained in the 'data' field
         """
-        
-        # TODO: Method must be updated to support asynchronous downloading
 
-        url = requests.compat.urljoin(self.site["url"], request)
+        async with vt.Client(self.options["virustotal"]) as client:
+            try:
+                url = requests.compat.urljoin(self.site["url"], request)
+                result = await client.get_json_async(url)
                 
-        result = None
-        try:
-            req = requests.get(url, headers=self.site["header"])
-            
-            # raise an error if the status code is not 200, otherwise fetch the JSON output
-            req.raise_for_status()
-            result = req.json()
-
-            if "data" not in result:
-                raise requests.exceptions.RequestException
-            
-            result = result["data"]
-        except requests.exceptions.HTTPError as err:
-            # the item is not available or could not be read
-            # (respective result will be logged by the parent method)
-            pass
-        except requests.exceptions.ConnectionError:
-            self.auxiliary.log("Network unreable.", level = "ERROR")
-        except requests.exceptions.RequestException as err:
-            self.auxiliary.log("Unknown error: {0}".format(err), level = "ERROR")
-
-        return result
+                if "data" not in result:
+                    raise ValueError("No valid JSON report received")
+                
+                return result["data"]
+            except vt.error.APIError as err:
+                return None
+            except ValueError as err:
+                self.options["auxiliary"].log("Behavior report for sample did not contain valid data: {0}".format(url))
+                return None
 
 
     async def get_heartbeat(self):
@@ -344,10 +329,9 @@ class VirusTotal_Search():
 
                 # if the report file is not on disk yet, it is downloaded
                 if not os.path.isfile(report_file):
-                    # TODO: asynchronous download required
                     url = 'files/{0}/behaviours'.format(sample_id)
-                    result = self.execute_request(url)
-
+                    result = await self.execute_request(url)
+                    
                     if result is None:
                         self.options["auxiliary"].log("Sample does not have a behavior report, or the report could not be retrieved: {0}".format(sample_id), level="ERROR")
                         self.behavior_queue.task_done()
@@ -389,9 +373,8 @@ class VirusTotal_Search():
         sha1 = re.compile(r"([a-fA-F\d]{40})")
         sha256 = re.compile(r"([a-fA-F\d]{64})")
 
-        asyncio.create_task(self.get_heartbeat())
-        
         samples = []
+        asyncio.create_task(self.get_heartbeat())
         with open(filename, "r") as f:
             for data in f:
                 data = data.strip("\n ")

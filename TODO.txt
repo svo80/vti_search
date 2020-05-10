@@ -1,4 +1,3 @@
 TODO:
 
-- download and parsing of behavior reports should occur asynchronously as well
 - support sort options for Intelligence searches

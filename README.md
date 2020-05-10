@@ -21,11 +21,9 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * Information includes meta data as well as detailed scanning and detection results upon request.
 * Supports the automatic download of associated samples and behavioral (dynamic analysis) reports.
 * Behavioral reports are automatically scanned for network-based Indicators of Compromise (IOCs).
-* Use of multiple workers to speed up operations.\*
+* Use of multiple workers to speed up operations.
 * All information is categorized in different sub-folders. Detailed logs facilitate post-processing.
 * Results can be exported in CSV format for subsequent relationship visualization with, e.g., Maltego.
-
-(\* Behavior report parsing is still mostly sequential and needs to be updated. If you are requesting information about a larger number of samples and are not seeing any additional details on the screen at some point anymore, please remain patient for the moment. The program is likely working in the background, and this issue will be fixed soon. Please also feel free to run `tail -f` on the log file.)
 
 
 ## Requirements 
