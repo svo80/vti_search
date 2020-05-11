@@ -35,7 +35,7 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * vt-py
 * keyring
 
-## Notes on Python 3.7 and Ubuntu 18.04
+### Notes on Python 3.7 and Ubuntu 18.04
 
 1. By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
 
@@ -61,7 +61,7 @@ $ sudo apt-get install --reinstall python3-pip
 ```
 
 
-## Package installation and Repository Cloning
+### Package installation and Repository Cloning
 
 1. Once Python 3.7 is avaialble, you can comfortably install all required packages as follows:
 
