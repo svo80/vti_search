@@ -2,7 +2,7 @@
 
 *VTISearch* is a small utility for running a VirusTotal Intelligence search query. A query can include powerful search modifiers (listed in the [documentation](https://support.virustotal.com/hc/en-us/articles/360001385897-File-search-modifiers)) that permit efficient threat research and hunting operations.
 
-The program leverages v3 of the VirusTotal API. Please note that for some features (including Intelligence Search), you need a private API key. The API key is requested upon the first start and saved to the keyring of the system for security reasons.
+The program leverages v3 of the VirusTotal API. Please note that for Intelligence Search (and most other features of the program), you need a *private* API key, i.e., access to VirusTotal Enterprise. The API key is requested upon the first start and saved to the keyring of the system for security reasons.
 
 By default, *VTISearch* retrieves information about the first 20 samples that are associated with the search query. However, results for up to 300 samples can be requested as well with the help of the `-l` (`--limit`) parameter.
 
@@ -31,14 +31,28 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * Linux operating system (tested on Ubuntu 18.04)
 
 * Python 3.7+  
-* vt
+* vt-py
 * keyring
 
 All required packages can be comfortably installed via pip:
 
 ```bash
-$ pip3 install vt keyring 
+$ pip3 install vt-py keyring 
 ```
+
+By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
+
+```bash
+$ sudo apt-get install python3.7
+```
+
+and then change to the new version with
+
+```
+$ sudo update-alternatives --config python3
+```
+
+If you subsequently run `python3 --version` you should see the new version. Please note that you might have to reinstall respective packages for this version.
 
 
 ## Options and Usage
