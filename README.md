@@ -37,8 +37,10 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 All required packages can be comfortably installed via pip:
 
 ```bash
-$ pip3 install vt-py keyring 
+$ sudo pip3 install vt-py keyring 
 ```
+
+(I am globally installing the packages in this example. Please feel free to set up a virtual environment instead if you prefer.)
 
 
 By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
