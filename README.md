@@ -30,11 +30,40 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 
 * Linux operating system (tested on Ubuntu 18.04)
 
-* Python 3.7+  
+* Python 3.7+
+* pip3
 * vt-py
 * keyring
 
-All required packages can be comfortably installed via pip:
+## Notes on Python 3.7 and Ubuntu 18.04
+
+1. By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
+
+```bash
+$ sudo apt-get install python3.7
+```
+
+and then change to the new version with\*
+
+```
+$ sudo update-alternatives --config python3
+```
+
+(\* In case you should get an error message that no alternative had been found, please run `sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1`.)
+
+If you subsequently run `python3 --version` you should see the new version. Please note that you might have to reinstall respective packages for this version.
+
+
+2. Please reinstall pip3 with
+
+```
+$ sudo apt-get install --reinstall python3-pip
+```
+
+
+## Package installation and Repository Cloning
+
+1. Once Python 3.7 is avaialble, you can comfortably install all required packages as follows:
 
 ```bash
 $ sudo pip3 install vt-py keyring 
@@ -43,22 +72,7 @@ $ sudo pip3 install vt-py keyring
 (I am globally installing the packages in this example. Please feel free to set up a virtual environment instead if you prefer.)
 
 
-By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
-
-```bash
-$ sudo apt-get install python3.7
-```
-
-and then change to the new version with
-
-```
-$ sudo update-alternatives --config python3
-```
-
-If you subsequently run `python3 --version` you should see the new version. Please note that you might have to reinstall respective packages for this version.
-
-
-In the last step, simply clone the *VTISearch* repository with, and you should be fully set up:
+2. Clone the *VTISearch* repository, and start the program:
 
 ```
 $ git clone https://github.com/svo80/vti_search.git .
