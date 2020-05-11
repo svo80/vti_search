@@ -258,6 +258,14 @@ class VirusTotal_Search():
             with open(sample_log, "w") as f:
                 # iterate through the result set - each element represents a File object
                 async for obj in it:
+                    # make sure to only process samples
+                    if obj.type != "file":
+                        if obj.type == "url":
+                            self.options["auxiliary"].log("Warning: Artifact is not a file: {0:70}".format(obj.url), level="WARNING")
+                        else:
+                            self.options["auxiliary"].log("Warning: Artifact is not a file: {0:70}".format(obj.id), level="WARNING")
+                        continue
+                    
                     f.write("{0}\n".format(obj.id))
                     
                     if self.options["download_samples"]  : await self.sample_queue.put(obj)

@@ -1,4 +1,3 @@
 TODO:
 
-- check returned artifacts for File type (only Intelligence searches for files are supported at the moment)
 - support sort options for Intelligence searches
