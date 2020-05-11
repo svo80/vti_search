@@ -26,7 +26,7 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 * Results can be exported in CSV format for subsequent relationship visualization with, e.g., Maltego.
 
 
-## Requirements 
+## Requirements and Installation
 
 * Linux operating system (tested on Ubuntu 18.04)
 
@@ -39,6 +39,7 @@ All required packages can be comfortably installed via pip:
 ```bash
 $ pip3 install vt-py keyring 
 ```
+
 
 By default, Python 3.6 is still installed on Ubuntu 18.04. You can install version 3.7 (or 3.8) with
 
@@ -53,6 +54,15 @@ $ sudo update-alternatives --config python3
 ```
 
 If you subsequently run `python3 --version` you should see the new version. Please note that you might have to reinstall respective packages for this version.
+
+
+In the last step, simply clone the *VTISearch* repository with, and you should be fully set up:
+
+```
+$ git clone https://github.com/svo80/vti_search.git .
+
+$ cd vti_search && python3 vti_search -h
+```
 
 
 ## Options and Usage
