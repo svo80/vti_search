@@ -121,7 +121,7 @@ class Auxiliary():
             fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
 
         line = "#"
-        for field in fields: line += "{0};".format(field)
+        for field in fields: line += "{0}{1}".format(field, self.options["separator"])
         csv_search.write("{0}\n".format(line[:-1]))
         self.options["csv_files"]["search"] = csv_search
         
@@ -133,7 +133,7 @@ class Auxiliary():
             fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Host", "Port", "URL"]
 
             line = "#"
-            for field in fields: line += "{0};".format(field)
+            for field in fields: line += "{0}{1}".format(field, self.options["separator"])
             csv_network.write("{0}\n".format(line[:-1]))
             self.options["csv_files"]["network"] = csv_network
 

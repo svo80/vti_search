@@ -122,18 +122,18 @@ class VirusTotal_Search():
                 attributes = dir(sample)
                 for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
                     if value not in attributes:
-                        line += ";"
+                        line += self.options["separator"]
                         continue
 
                     if isinstance(getattr(sample, value), list):
                         list_items = ""
                         for item in getattr(sample, value):
-                            list_items += "{0}, ".format(item)
-                        line += "\"{0}\";".format(list_items[:-2])
+                            list_items += "{0}|".format(item)
+                        line += "\"{0}\"{1}".format(list_items[:-1], self.options["separator"])
                     else:
                         line += "{0};".format(getattr(sample, value))
                 for value in ["engine_name", "result", "category", "engine_update"]:
-                    line += "{0};".format(engine[value]) if engine[value] is not None else ";"
+                    line += "{0}{1}".format(engine[value], self.options["separator"]) if engine[value] is not None else self.options["separator"]
                 
                 self.options["csv_files"]["search"].write("{0}\n".format(line[:-1]))
                 
@@ -205,22 +205,22 @@ class VirusTotal_Search():
             attributes = dir(sample)
             for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags", "first_submission_date", "last_submission_date", "times_submitted"]: 
                 if value not in attributes:
-                    line += ";"
+                    line += self.options["separator"]
                     continue
 
                 if isinstance(getattr(sample, value), list):
                     list_items = ""
                     for item in getattr(sample, value):
-                        list_items += "{0}, ".format(item)
-                    line += "\"{0}\";".format(list_items[:-2])
+                        list_items += "{0}|".format(item)
+                    line += "\"{0}\"{1}".format(list_items[:-1], self.options["separator"])
                 else:
-                    line += "{0};".format(getattr(sample, value))
+                    line += "{0}{1}".format(getattr(sample, value), self.options["separator"])
 
             for value in ["malicious", "suspicious", "undetected"]:
                 if (("last_analysis_stats" in attributes) and (value in sample.last_analysis_stats.keys())):
-                    line += "{0};".format(sample.last_analysis_stats[value])
+                    line += "{0}{1}".format(sample.last_analysis_stats[value], self.options["separator"])
                 else:
-                    line += ";"
+                    line += self.options["separator"]
 
             self.options["csv_files"]["search"].write("{0}\n".format(line[:-1]))
        

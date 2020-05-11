@@ -40,19 +40,19 @@ class Sandbox_Parser():
                                 line = ""
                                 for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
                                     if value not in attributes:
-                                        line += ";"
+                                        line += self.options["separator"]
                                         continue
                                     
                                     if isinstance(getattr(sample, value), list):
                                         list_items = ""
                                         for list_item in getattr(sample, value):
                                             list_items += "{0}, ".format(list_item)
-                                        line += "\"{0}\";".format(list_items[:-2])
+                                        line += "\"{0}\"{1}".format(list_items[:-2], self.options["separator"])
                                     else:
-                                        line += "{0};".format(getattr(sample, value))
+                                        line += "\"{0}\"{1}".format(getattr(sample, value), self.options["separator"])
 
                                 for value in ["destination_ip", "destination_port", "url"]:
-                                    line += "{0};".format(item[value]) if (value in item) and (item[value] is not None) else ";"
+                                    line += "\"{0}\"{1}".format(item[value], self.options["separator"]) if (value in item) and (item[value] is not None) else "\"\"{0}".format(self.options["separator"])
                                 self.options["csv_files"]["network"].write("{0}\n".format(line[:-1]))
 
                             # TODO: Should we only add the host or host:port information?
@@ -67,19 +67,19 @@ class Sandbox_Parser():
                                 line = ""
                                 for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
                                     if value not in attributes:
-                                        line += ";"
+                                        line += self.options["separator"] 
                                         continue
                                     
                                     if isinstance(getattr(sample, value), list):
                                         list_items = ""
                                         for list_item in getattr(sample, value):
-                                            list_items += "{0}, ".format(list_item)
-                                        line += "\"{0}\";".format(list_items[:-2])
+                                            list_items += "{0}|".format(list_item)
+                                        line += "\"{0}\"{1}".format(list_items[:-2], self.options["separator"])
                                     else:
-                                        line += "{0};".format(getattr(sample, value))
+                                        line += "\"{0}\"{1}".format(getattr(sample, value), self.options["separator"])
 
                                 for value in ["destination_ip", "destination_port", "url"]:
-                                    line += "{0};".format(item[value]) if (value in item) and (item[value] is not None) else ";"
+                                    line += "\"{0}\"{1}".format(item[value], self.options["separator"]) if (value in item) and (item[value] is not None) else "\"\"{0}".format(self.options["separator"])
                                 self.options["csv_files"]["network"].write("{0}\n".format(line[:-1]))
 
                             traffic_objects.append(item["url"])

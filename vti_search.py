@@ -62,7 +62,8 @@ async def main():
         help="If set, display results as comma-separated values.")
     
     options = vars(opt.parse_args())
-   
+    options["separator"] = ","
+
     if (len(options["query"]) == 0) and (len(options["sample_file"]) == 0):
         print("Please either specify a VirusTotal Intelligence search query (-q) or a file with sample hashes (-f).\n")
         sys.exit(-1)
