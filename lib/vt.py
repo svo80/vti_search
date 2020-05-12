@@ -58,9 +58,19 @@ KEYWORD_MAP = {
         "times_submitted"       :   "Number of submissions",
         "unique_sources"        :   "Unique sources",
         "size"                  :   "Size",
-        "type_tag"              :   "Type Tag",
+        "type_tag"              :   "Type",
         "tags"                  :   "Tag(s)",
-        "magic"                 :   "Type",
+        "magic"                 :   "File description",
+
+        # domain attributes
+        "creation_date"         :   "Creation date",
+        "last_modification_date":   "Last modified",
+        "last_update_date"      :   "Last updated",
+        "registrar"             :   "Registrar",
+        
+        # url attributes
+        "title"                 :   "Title",
+        "last_final_url"        :   "Final URL",
 
         # attributes for scan results
         "harmless"              :   "Benign",
@@ -108,19 +118,35 @@ class VirusTotal_Search():
         results = sample.last_analysis_results
         for item in results:
             engine = results[item]
+            
             # category can be, e.g., suspicious, malicious, undetected, etc. 
             category = KEYWORD_MAP[engine["category"]] if engine["category"] in KEYWORD_MAP else engine["category"]         
             signature = engine["result"] if engine["result"] is not None else "--"
             if len(signature) > 40: signature = "{0} (...)".format(signature[:40])
 
-            string = "{0}{1:28}{2:47}{3:25}(Signature Database: {4})".format(" " * 2, engine["engine_name"], signature, category, engine["engine_update"])
+            if "engine_update" in engine and engine["engine_update"] is not None:
+                signature_database = engine["engine_update"] 
+            else:
+                signature_database = "--"
+
+            string = "{0}{1:28}{2:47}{3:25}(Signature Database: {4})".format(" " * 2, engine["engine_name"], signature, category, signature_database)
             if self.options["verbose"] >= required_verbose_level: print(string)
             if file_handle is not None: file_handle.write("{0}\n".format(string))
 
             if self.options["csv"] and self.options["verbose"] >= 3:
                 line = ""
                 attributes = dir(sample)
-                for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]:
+
+                if sample.type == "file":
+                    fields = ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags"]
+                elif sample.type == "domain":
+                    fields = ["id", "registrar", "tags"]
+                elif sample.type == "url":
+                    fields = ["url", "last_final_url", "title", "tags"]
+                else:
+                    fields = []
+
+                for value in fields:
                     if value not in attributes:
                         line += self.options["separator"]
                         continue
@@ -131,11 +157,15 @@ class VirusTotal_Search():
                             list_items += "{0}|".format(item)
                         line += "\"{0}\"{1}".format(list_items[:-1], self.options["separator"])
                     else:
-                        line += "{0};".format(getattr(sample, value))
+                        line += "\"{0}\"{1}".format(getattr(sample, value), self.options["separator"])
                 for value in ["engine_name", "result", "category", "engine_update"]:
-                    line += "{0}{1}".format(engine[value], self.options["separator"]) if engine[value] is not None else self.options["separator"]
+
+                    if value in engine and engine[value] is not None:
+                        line += "\"{0}\"{1}".format(engine[value], self.options["separator"]) 
+                    else:
+                        line += "\"\"{0}".format(self.options["separator"])
                 
-                self.options["csv_files"]["search"].write("{0}\n".format(line[:-1]))
+                self.options["csv_files"][sample.type].write("{0}\n".format(line[:-1]))
                 
         if self.options["verbose"] >= required_verbose_level: print()
         if file_handle is not None: file_handle.write("\n")
@@ -190,20 +220,43 @@ class VirusTotal_Search():
             :param sample: Sample object
         """
 
-        print("{0:80}".format(sample.sha256))
-        file_handle = None
+        identifier = ""
+        if sample.type in ["file", "domain"]:
+            # INFO: For domains, the identifier is the domain name
+            #       This appears to be okay, as for unicode characters an internationalized domain
+            #       name is returned which should not cause any conflict with the file system level
+            # TODO: check this with dedicated tests
+            identifier = sample.id
+        elif sample.type == "url":
+            identifier = sample.url
+        else:
+            self.options["auxiliary"].log("Unknown sample type detected: {0} - {1}".format(sample.type, sample.id), level="WARNING")
+        print("{0:80}".format(identifier))
+
         # write the summary information to disk if a filename was provided and the report
-        # does not exist yet, otherwise only display the information on the console
+        # does not exist yet, otherwise only log but do not rewrite
+        file_handle = None
         if (filename is not None) and (not os.path.exists(filename)): 
             file_handle = open(filename, "w")
-            file_handle.write("{0}\n".format(sample.sha256))
+            file_handle.write("{0}\n".format(identifier))
         elif (filename is not None) and (os.path.exists(filename)):
             self.options["auxiliary"].log("Summary report for sample already exists on disk and is not downloaded again: {0}".format(sample.id), level = "DEBUG")
 
         if self.options["csv"] and self.options["verbose"] < 3:
             line = ""
             attributes = dir(sample)
-            for value in ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags", "first_submission_date", "last_submission_date", "times_submitted"]: 
+
+            fields = []
+            if sample.type == "file":
+                fields = ["sha256", "md5", "sha1", "vhash", "size", "type_tag", "tags", "first_submission_date", "last_submission_date", "times_submitted"]
+            elif sample.type == "domain":
+                fields = ["id", "registrar", "tags", "creation_date", "last_modification_date", "last_update_date"]
+            elif sample.type == "url":
+                fields = ["url", "last_final_url", "title", "tags", "first_submission_date", "last_submission_date", "times_submitted"]
+            else:
+                fields = []
+
+            for value in fields: 
                 if value not in attributes:
                     line += self.options["separator"]
                     continue
@@ -214,28 +267,43 @@ class VirusTotal_Search():
                         list_items += "{0}|".format(item)
                     line += "\"{0}\"{1}".format(list_items[:-1], self.options["separator"])
                 else:
-                    line += "{0}{1}".format(getattr(sample, value), self.options["separator"])
+                    line += "\"{0}\"{1}".format(getattr(sample, value), self.options["separator"])
 
-            for value in ["malicious", "suspicious", "undetected"]:
+            for value in ["harmless", "malicious", "suspicious", "undetected"]:
                 if (("last_analysis_stats" in attributes) and (value in sample.last_analysis_stats.keys())):
-                    line += "{0}{1}".format(sample.last_analysis_stats[value], self.options["separator"])
+                    line += "\"{0}\"{1}".format(sample.last_analysis_stats[value], self.options["separator"])
                 else:
-                    line += self.options["separator"]
+                    line += "\"{0}\"".format(self.options["separator"])
 
-            self.options["csv_files"]["search"].write("{0}\n".format(line[:-1]))
-       
-        values = ["md5", "sha1", "vhash"]
+            self.options["csv_files"][sample.type].write("{0}\n".format(line[:-1]))
+      
+        # verbose level 1
+        if sample.type == "file":
+            values = ["md5", "sha1", "vhash"]
+        elif sample.type == "domain":
+            values = ["creation_date", "last_modification_date", "last_update_date"]
+        elif sample.type == "url":
+            values = ["last_final_url", "title"]
+        else:
+            values = []
         self.display_values(values, sample, required_verbose_level = 1, file_handle = file_handle)
         
         values = ["magic", "type_tag", "tags", "size"]
         self.display_values(values, sample, required_verbose_level = 1, file_handle = file_handle)
 
-        values = ["first_submission_date", "last_submission_date", "times_submitted", "unique_sources"]
+        # verbose level 2
+        if sample.type in ["file", "url"]:
+            values = ["first_submission_date", "last_submission_date", "times_submitted", "unique_sources"]
+        elif sample.type == "domain":
+            values = ["registrar"]
+        else:
+            values = []
         self.display_values(values, sample, required_verbose_level = 2, file_handle = file_handle)
    
         values = ["last_analysis_stats"]
-        self.display_values(values, sample, ["malicious", "suspicious", "undetected"], required_verbose_level = 1, file_handle = file_handle)
+        self.display_values(values, sample, ["harmless", "malicious", "suspicious", "undetected"], required_verbose_level = 1, file_handle = file_handle)
 
+        # verbose level 3
         self.display_scanning_results(sample, required_verbose_level = 3, file_handle = file_handle)
 
         if file_handle is not None: 
@@ -251,26 +319,29 @@ class VirusTotal_Search():
             self.options["auxiliary"].log("Running intelligence query: {0}".format(self.options["query"]))
             it = client.iterator('/intelligence/search',  params={'query': self.options["query"]}, limit=self.options["limit"])
             
-            sample_log = os.path.join(self.options["download_dir"], "samples.txt")
+            artifact_log = os.path.join(self.options["download_dir"], self.options["filenames"]["artifacts"])
 
             tasks = []
             asyncio.create_task(self.get_heartbeat())
-            with open(sample_log, "w") as f:
+            with open(artifact_log, "w") as f:
                 # iterate through the result set - each element represents a File object
                 async for obj in it:
-                    # make sure to only process samples
-                    if obj.type != "file":
-                        if obj.type == "url":
-                            self.options["auxiliary"].log("Warning: Artifact is not a file: {0:70}".format(obj.url), level="WARNING")
-                        else:
-                            self.options["auxiliary"].log("Warning: Artifact is not a file: {0:70}".format(obj.id), level="WARNING")
+                    if obj.type not in ["file", "url", "domain"]:
+                        self.options["auxiliary"].log("Warning: Unknown artifact type detected: {0} - {1:70}".format(obj.type, obj.id), level="WARNING")
                         continue
                     
-                    f.write("{0}\n".format(obj.id))
+                    # log the name / identifier of the artifact
+                    if obj.type in ["file", "domain"]:
+                        f.write("{0}\n".format(obj.id))
+                    elif obj.type == "url":
+                        f.write("{0} => {1}\n".format(obj.id, obj.url)) 
+
+                    # for samples, request downloading the artifact and behavior report
+                    if obj.type == "file":
+                        if self.options["download_samples"]  : await self.sample_queue.put(obj)
+                        if self.options["download_behavior"] : await self.behavior_queue.put(obj)
                     
-                    if self.options["download_samples"]  : await self.sample_queue.put(obj)
-                    if self.options["download_behavior"] : await self.behavior_queue.put(obj)
-                   
+                    # save the report summary
                     sample_report = os.path.join(self.options["info_dir"], obj.id)
                     self.display_information(obj, sample_report)
             
@@ -480,8 +551,6 @@ class VirusTotal_Search():
                         self.options["auxiliary"].log("Successfully downloaded sample: {0}".format(sample_id), level = "DEBUG")
 
                     self.sample_queue.task_done()
-                    continue
                 except IOError as err:
                     self.options["auxiliary"].log("Error while downloading sample: {0}".format(err), level = "ERROR")
                     self.sample_queue.task_done()
-                    continue

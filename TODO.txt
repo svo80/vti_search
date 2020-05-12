@@ -1,3 +1,5 @@
 TODO:
 
+- support looking up URLs and domains when information is provided via a file (-f) rather than
+  via a query ( - for intelligence searches, looking up domains and URLs is already supported)
 - support sort options for Intelligence searches

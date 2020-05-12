@@ -9,11 +9,22 @@ import asyncio
 from datetime import datetime
 from lib import auxiliary, vt
 
-meta =  {
-            "title"     :   "VTISearch - VirusTotal Intelligence Search",
-            "note"      :   "Written by Stefan Voemel.",
-            "version"   :   "0.1.3",
-        }
+meta =      {
+                "title"     :   "VTISearch - VirusTotal Intelligence Search",
+                "note"      :   "Written by Stefan Voemel.",
+                "version"   :   "0.1.5",
+            }
+
+
+filenames = {
+                # INFO: file, url, and domain identifiers represent the type of a VirusTotal object
+                #       do not change these identifiers
+                "artifacts" :   "artifacts.txt",
+                "file"      :   "samples.csv",
+                "url"       :   "urls.csv",
+                "domain"    :   "domains.csv",
+                "network"   :   "network_iocs.csv",
+            }
 
 
 def get_header():
@@ -63,6 +74,7 @@ async def main():
     
     options = vars(opt.parse_args())
     options["separator"] = ","
+    options["filenames"] = filenames
 
     if (len(options["query"]) == 0) and (len(options["sample_file"]) == 0):
         print("Please either specify a VirusTotal Intelligence search query (-q) or a file with sample hashes (-f).\n")
@@ -76,6 +88,7 @@ async def main():
 
         options["download_dir"] = os.path.join(module_path, "downloads", timestamp)
 
+    options["csv_dir"] = os.path.join(options["download_dir"], "csv")
     options["info_dir"] = os.path.join(options["download_dir"], "reports")
     options["samples_dir"] = os.path.join(options["download_dir"], "samples")
     options["reports_dir"] = os.path.join(options["download_dir"], "behavior")
@@ -83,7 +96,7 @@ async def main():
 
     # create directories if necessary
     created = True
-    for directory in ["download_dir", "info_dir", "samples_dir", "reports_dir"]:
+    for directory in ["download_dir", "csv_dir", "info_dir", "samples_dir", "reports_dir"]:
         try:
             os.makedirs(options[directory])
         except FileExistsError as err:

@@ -17,7 +17,7 @@ When using the `--csv` option, results can be exported in CSV format for subsequ
 
 ## Features
 
-* Retrieves information for up to 300 artifacts that are related to the search query.
+* Retrieves information for up to 300 artifacts (samples, domains, URLs) that are related to the search query.
 * Information includes meta data as well as detailed scanning and detection results upon request.
 * Supports the automatic download of associated samples and behavioral (dynamic analysis) reports.
 * Behavioral reports are automatically scanned for network-based Indicators of Compromise (IOCs).
@@ -240,22 +240,25 @@ Written by Stefan Voemel.
 ## File Structure
 
 ```bash
-├── downloads            Program data
+├── downloads                     Program data
 │   └── <timestamp>
-│       ├── behavior/    Directory for behavioral reports
-│       ├── log.txt      Detailed log file with program runtime messages
-│       ├── network.csv  Network indicators
-│       ├── reports/     Directory for summary reports and network indicators (*.ioc)
-│       ├── samples/     Directory for malware samples
-│       ├── samples.txt  List of malware samples in scope
-│       └── search.csv   Results of the Intelligence search in CSV format
+│       ├── artifacts.txt         List of artifacts that were in scope
+│       ├── behavior/             Directory for behavioral reports
+│       ├── csv                   Directory with CSV files
+│       │   ├── domains.csv       Exported domains (if existing)
+│       │   ├── network_iocs.csv  Exported network indicators
+│       │   ├── samples.csv       Exported samples (if existing)
+│       │   └── urls.csv          Exorted URLs (if existing)
+│       ├── log.txt               Detailed log file with program runtime messages
+│       ├── reports/              Directory for summary reports and network indicators (*.ioc)
+│       ├── samples/              Directory for malware samples
 │   
-├── lib                  Program libraries
+├── lib                           Program libraries
 │   ├── auxiliary.py
 │   ├── sandboxes.py
 │   └── vt.py
 ├── README.md
-└── vti_search.py        Main program file
+└── vti_search.py                 Main program file
 ```
 
 

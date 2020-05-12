@@ -106,36 +106,54 @@ class Auxiliary():
             return api_key
 
 
-    def create_csv_files(self):
+    def create_csv_header(self, filename, fields):
 
-        # saves a dictionary of file handles to CSV files
-        self.options["csv_files"] = {}
-
-        # CSV file for Intelligence search results
-        filename = os.path.join(self.options["download_dir"], "search.csv")
-        csv_search = open(filename, "w")
-
-        if self.options["verbose"] < 3:
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "First submitted on", "Last submitted on", "Times submitted", "Malicious", "Suspicious", "Undetected"]
-        else:
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
-
-        line = "#"
-        for field in fields: line += "{0}{1}".format(field, self.options["separator"])
-        csv_search.write("{0}\n".format(line[:-1]))
-        self.options["csv_files"]["search"] = csv_search
-        
-        # CSV file for network indicators
-        if self.options["download_behavior"]:
-            filename = os.path.join(self.options["download_dir"], "network.csv")
-            csv_network = open(filename, "w")
-
-            fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Host", "Port", "URL"]
-
+        try:
+            file_handle = open(filename, "w")
+            
             line = "#"
             for field in fields: line += "{0}{1}".format(field, self.options["separator"])
-            csv_network.write("{0}\n".format(line[:-1]))
-            self.options["csv_files"]["network"] = csv_network
+            file_handle.write("{0}\n".format(line[:-1]))
+            
+            return file_handle
+        except IOError as err:
+            self.options["auxiliary"].log("CSV file could not be created: {0}".format(filename), level = "ERROR")
+            return None
+
+
+
+    def create_csv_files(self):
+        
+        # saves a dictionary of file handles to CSV files
+        self.options["csv_files"] = {}
+        for item in self.options["filenames"]:
+            filename = self.options["filenames"][item]
+            if not filename.endswith(".csv"): continue
+            
+            fields = []
+            # define header fields for each artifact type 
+            if self.options["verbose"] < 3:
+                if item == "file":
+                    fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "First submitted on", "Last submitted on", "Times submitted", "Benign", "Malicious", "Suspicious", "Undetected"]
+                elif item == "domain":
+                    fields = ["Domain", "Registrar", "Tags", "Created on", "Last modified", "Last updated", "Benign", "Malicious", "Suspicious", "Undetected"]
+                elif item == "url":
+                    fields = ["URL", "Final URL", "Title", "Tags", "First submitted on", "Last submitted on", "Times submitted", "Benign", "Malicious", "Suspicious", "Undetected"]
+            else:
+                if item == "file":
+                    fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
+                elif item == "domain":
+                    fields = ["Domain", "Registrar", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
+                elif item == "url":
+                    fields = ["URL", "Final URL", "Title", "Tags", "Vendor", "Signature", "Result", "Signature Database"]
+
+            # network IOCs for a sample should be created regardless of the verbosity level
+            if item == "network":
+                fields = ["SHA256", "MD5", "SHA1", "Vhash", "Size", "Type", "Tags", "Host", "Port", "URL"]
+
+            filename = os.path.join(self.options["csv_dir"], filename)
+            file_handle = self.create_csv_header(filename, fields)
+            self.options["csv_files"][item] = file_handle
 
 
     def close_csv_files(self):
@@ -143,5 +161,6 @@ class Auxiliary():
         if "csv_files" not in self.options: return
         
         for filename in self.options["csv_files"]:
-            self.options["csv_files"][filename].close()
+            if self.options["csv_files"][filename] is not None: 
+                self.options["csv_files"][filename].close()
 
