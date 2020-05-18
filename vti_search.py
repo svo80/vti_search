@@ -12,7 +12,7 @@ from lib import auxiliary, vt
 meta =      {
                 "title"     :   "VTISearch - VirusTotal Intelligence Search",
                 "note"      :   "Written by Stefan Voemel.",
-                "version"   :   "0.1.5",
+                "version"   :   "0.1.6",
             }
 
 
@@ -117,6 +117,7 @@ async def main():
     # start interaction with the VirusTotal service
     virustotal = vt.VirusTotal_Search(options)
 
+    start_time = datetime.now()
     tasks = []
     # perform an Intelligence search (and download respective samples if indicated)
     if len(options["query"]) > 0:
@@ -134,8 +135,11 @@ async def main():
     for task in tasks:
         task.cancel()
 
+
+    end_time = datetime.now()
     options["auxiliary"].log("\nInformation saved to {0}.".format(options["download_dir"]))
-    
+    options["auxiliary"].log("Operations completed in {0}.\n".format((end_time - start_time)))
+
     if options["csv"]: options["auxiliary"].close_csv_files()
 
 

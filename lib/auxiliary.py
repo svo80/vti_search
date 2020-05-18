@@ -99,11 +99,9 @@ class Auxiliary():
             self.log("VirusTotal API key was read from the system keyring.", level = "DEBUG")
             return api_key
 
-            
         self.log("{0}\nPlease note that you must specify an API key that is valid for the (commercial) Private API in order to fully use this program.\n".format(message), level = "WARNING")
         
         while True:
-
             try:
                 key1  = input("Please enter the API key, or press Ctrl+C to abort:  ")
                 key2  = input("Please verify the API key, or press Ctrl+C to abort: ")
@@ -131,7 +129,6 @@ class Auxiliary():
         except IOError as err:
             self.options["auxiliary"].log("CSV file could not be created: {0}".format(filename), level = "ERROR")
             return None
-
 
 
     def create_csv_files(self):
