@@ -65,6 +65,8 @@ async def main():
  
     opt.add_argument("-v", "--verbose", action="count", default=0, dest="verbose",
         help="If set, display verbose information about reports.\nUse -vvv to see detailed scan results.")
+    opt.add_argument("-u", "--update-key", action="store_true", dest="update_api_key",
+        help="If set, offers to enter a new API key.")
     
     opt.add_argument("-w", "--workers", type=int, default=5, dest="workers",
         help="Number of concurrent workers.")

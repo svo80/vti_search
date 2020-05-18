@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 import os.path
 import keyring
 from datetime import datetime
@@ -89,21 +90,33 @@ class Auxiliary():
         """
 
         api_key = keyring.get_password('virustotal', 'api_key')
-
+        print(api_key)
+        message = ""
         if api_key is None:
-            self.log("VirusTotal API key is not yet stored in the system keyring.\nPlease note that you must specify an API key that is valid for the Private API in order to fully use this program.\n", level = "WARNING")
-            while True:
-                key1  = input("Please enter the API key:  ")
-                key2  = input("Please verify the API key: ")
+            message = "VirusTotal API key is not yet stored in the system keyring."
+        elif self.options["update_api_key"]:
+            message = "The VirusTotal API key was requested to be updated."
+        else:
+            self.log("VirusTotal API key was read from the system keyring.", level = "DEBUG")
+            return api_key
+
+            
+        self.log("{0}\nPlease note that you must specify an API key that is valid for the (commercial) Private API in order to fully use this program.\n".format(message), level = "WARNING")
+        
+        while True:
+
+            try:
+                key1  = input("Please enter the API key, or press Ctrl+C to abort:  ")
+                key2  = input("Please verify the API key, or press Ctrl+C to abort: ")
                 
                 if key1.strip("\n ") == key2.strip("\n "):
                     api_key = key1.strip("\n ")
                     keyring.set_password("virustotal", "api_key", api_key)
                     self.log("VirusTotal API key was saved to the system keyring.", level = "DEBUG")
                     return api_key
-        else:
-            self.log("VirusTotal API key was read from the system keyring.", level = "DEBUG")
-            return api_key
+            except KeyboardInterrupt:
+                self.log("\n\nAPI key not entered. Program aborted.\n")
+                sys.exit(0)
 
 
     def create_csv_header(self, filename, fields):

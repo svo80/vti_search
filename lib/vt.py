@@ -325,26 +325,38 @@ class VirusTotal_Search():
             asyncio.create_task(self.get_heartbeat())
             with open(artifact_log, "w") as f:
                 # iterate through the result set - each element represents a File object
-                async for obj in it:
-                    if obj.type not in ["file", "url", "domain"]:
-                        self.options["auxiliary"].log("Warning: Unknown artifact type detected: {0} - {1:70}".format(obj.type, obj.id), level="WARNING")
-                        continue
-                    
-                    # log the name / identifier of the artifact
-                    if obj.type in ["file", "domain"]:
-                        f.write("{0}\n".format(obj.id))
-                    elif obj.type == "url":
-                        f.write("{0} => {1}\n".format(obj.id, obj.url)) 
+                try:
+                    async for obj in it:
+                        if obj.type not in ["file", "url", "domain"]:
+                            self.options["auxiliary"].log("Warning: Unknown artifact type detected: {0} - {1:70}".format(obj.type, obj.id), level="WARNING")
+                            continue
+                        
+                        # log the name / identifier of the artifact
+                        if obj.type in ["file", "domain"]:
+                            f.write("{0}\n".format(obj.id))
+                        elif obj.type == "url":
+                            f.write("{0} => {1}\n".format(obj.id, obj.url)) 
 
-                    # for samples, request downloading the artifact and behavior report
-                    if obj.type == "file":
-                        if self.options["download_samples"]  : await self.sample_queue.put(obj)
-                        if self.options["download_behavior"] : await self.behavior_queue.put(obj)
+                        # for samples, request downloading the artifact and behavior report
+                        if obj.type == "file":
+                            if self.options["download_samples"]  : await self.sample_queue.put(obj)
+                            if self.options["download_behavior"] : await self.behavior_queue.put(obj)
+                        
+                        # save the report summary
+                        sample_report = os.path.join(self.options["info_dir"], obj.id)
+                        self.display_information(obj, sample_report)
+                except vt.error.APIError as err:
                     
-                    # save the report summary
-                    sample_report = os.path.join(self.options["info_dir"], obj.id)
-                    self.display_information(obj, sample_report)
-            
+                    if err.code in ["AuthenticationRequiredError", "ForbiddenError", "UserNotActiveError", "WrongCredentialsError"]:
+                        self.auxiliary.log("The API key is not valid for accessing the VirusTotal Private API, or there was a problem with the user account.", level = "ERROR")
+                    elif err.code in ["QuotaExceededError", "TooManyRequestsError"]:
+                        self.auxiliary.log("The quota for the API key or the number of issued requests has been exceeded.", level = "ERROR")
+                    else:
+                        self.auxiliary.log("There was an error while processing the request: {0}".format(err.code), level="ERROR")
+
+                    return None
+
+                    
                 for worker in range(self.options["workers"]):
                     if self.options["download_behavior"]: tasks.append(asyncio.create_task(self.get_behavior_report()))
                     if self.options["download_samples"]: tasks.append(asyncio.create_task(self.get_sample()))
@@ -467,7 +479,7 @@ class VirusTotal_Search():
         # retrieve summary information and check if the sample exists
         tasks = []
         for worker in range(self.options["workers"]):
-            tasks.append(asyncio.create_task(self.get_sample_info()))
+            result = tasks.append(asyncio.create_task(self.get_sample_info()))
                     
         results = await asyncio.gather(*tasks)
         await self.info_queue.join()
@@ -510,8 +522,21 @@ class VirusTotal_Search():
                     self.display_information(result, sample_report)
 
                     samples.append(result)
-                except vt.error.APIError:
-                    self.options["auxiliary"].log("Sample was not found: {0}\n".format(sample_id), level = "WARNING")
+                except vt.error.APIError as err:
+                    if err.code == "NotFoundError":
+                        self.options["auxiliary"].log("Sample was not found: {0}\n".format(sample_id), level = "WARNING")
+                        continue
+                    elif err.code in ["AuthenticationRequiredError", "ForbiddenError", "UserNotActiveError", "WrongCredentialsError"]:
+                        self.auxiliary.log("The API key is not valid for accessing the VirusTotal Private API, or there was a problem with the user account.", level = "ERROR")
+                    elif err.code in ["QuotaExceededError", "TooManyRequestsError"]:
+                        self.auxiliary.log("The quota for the API key or the number of issued requests has been exceeded.", level = "ERROR")
+                    else:
+                        self.auxiliary.log("There was an error while processing the request: {0}".format(err.code), level="ERROR")
+                    
+                    # clear all remaining items in the queue
+                    while not self.info_queue.empty(): 
+                        await self.info_queue.get()
+                        self.info_queue.task_done()
 
                 self.info_queue.task_done()
 
