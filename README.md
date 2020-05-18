@@ -111,6 +111,8 @@ optional arguments:
   -v, --verbose                       If set, display verbose information about reports. Use
                                       -vvv to see detailed scan results.
 
+  -u, --update-key                    If set, offers to enter a new API key.
+
   -w, --workers WORKERS               Number of concurrent workers.
 
   --csv                               If set, display results as comma-separated values.

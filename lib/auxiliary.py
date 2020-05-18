@@ -90,7 +90,6 @@ class Auxiliary():
         """
 
         api_key = keyring.get_password('virustotal', 'api_key')
-        print(api_key)
         message = ""
         if api_key is None:
             message = "VirusTotal API key is not yet stored in the system keyring."
