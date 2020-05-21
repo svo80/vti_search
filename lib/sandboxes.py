@@ -35,6 +35,10 @@ class Sandbox_Parser():
                 if "ip_traffic" in data:
                     traffic = data["ip_traffic"]
                     for item in traffic:
+                        # only consider UDP or TCP connections
+                        if ("transport_layer_protocol" not in item) or (("transport_layer_protocol" in item) and (item["transport_layer_protocol"] not in ["UDP", "TCP"])):
+                            continue
+
                         if "{0}:{1}".format(item["destination_ip"], item["destination_port"]) not in traffic_objects:
                             if self.options["csv"]:
                                 line = ""

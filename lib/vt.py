@@ -99,6 +99,55 @@ class VirusTotal_Search(Artifact):
                 for task in tasks: task.cancel()
 
 
+    async def download_samples(self, filename):
+        """ Reads in a list of hashes from a file for subsequent sample download
+
+            :param filename: The name of the file that contains the list of hashes
+        """
+        
+        md5 = re.compile(r"([a-fA-F\d]{32})")
+        sha1 = re.compile(r"([a-fA-F\d]{40})")
+        sha256 = re.compile(r"([a-fA-F\d]{64})")
+
+        samples = []
+        asyncio.create_task(self.get_heartbeat())
+        with open(filename, "r") as f:
+            for data in f:
+                data = data.strip("\n ")
+                if md5.match(data) or sha1.match(data) or sha256.match(data):
+                    # if the entry in the file represents a sample by hash, and the 
+                    # sample is appearing for the first time, add it to the queue
+                    if data not in samples:
+                        await self.info_queue.put(data)
+                        samples.append(data)
+
+        # retrieve summary information and check if the sample exists
+        tasks = []
+        for worker in range(self.options["workers"]):
+            result = tasks.append(asyncio.create_task(self.get_sample_info()))
+                    
+        results = await asyncio.gather(*tasks)
+        await self.info_queue.join()
+        for task in tasks: task.cancel()
+
+        # download artifacts that are existing as well as corresponding behavior reports
+        for worker in results:
+            for sample in worker:
+                if sample is not None:
+                    if self.options["download_samples"]  : await self.sample_queue.put(sample)
+                    if self.options["download_behavior"] : await self.behavior_queue.put(sample)
+
+        tasks = []
+        for worker in range(self.options["workers"]):
+            if self.options["download_behavior"]: tasks.append(asyncio.create_task(self.get_behavior_report()))
+            if self.options["download_samples"]: tasks.append(asyncio.create_task(self.get_sample()))
+                    
+        await asyncio.gather(*tasks)
+        await self.behavior_queue.join()
+        await self.sample_queue.join()
+        for task in tasks: task.cancel()
+
+
     async def execute_request(self, request):
         """ Runs an asynchronous call to retreive a behavioral report from VirusTotal
         
@@ -131,6 +180,47 @@ class VirusTotal_Search(Artifact):
             sys.stdout.write("\033[94m[Queue] Sample Reports: {0:03d} - Artifacts: {1:03d} - Behavior Reports: {2:03d}\033[0m\r".format(self.info_queue.qsize(), self.sample_queue.qsize(), self.behavior_queue.qsize()))
             sys.stdout.flush()
             await asyncio.sleep(1)
+
+
+    async def get_sample_info(self):
+        """ Retrieves summary information about a sample
+        """
+        
+        samples = []
+        async with vt.Client(self.options["virustotal"]) as client:
+            while not self.info_queue.empty():
+                try:
+                    sample_id = await self.info_queue.get()
+                    path = os.path.join("/files", sample_id)
+                    
+                    # this call should be always performed to check if the sample exists
+                    # and get context information for a hash value
+                    result = await client.get_object_async(path)
+
+                    sample_report = os.path.join(self.options["info_dir"], sample_id)
+                    super().display_information(result, sample_report)
+
+                    samples.append(result)
+                except vt.error.APIError as err:
+                    if err.code == "NotFoundError":
+                        self.options["auxiliary"].log("Sample was not found: {0}\n".format(sample_id), level = "WARNING")
+                        self.info_queue.task_done()
+                        continue
+                    elif err.code in ["AuthenticationRequiredError", "ForbiddenError", "UserNotActiveError", "WrongCredentialsError"]:
+                        self.auxiliary.log("The API key is not valid for accessing the VirusTotal Private API, or there was a problem with the user account.", level = "ERROR")
+                    elif err.code in ["QuotaExceededError", "TooManyRequestsError"]:
+                        self.auxiliary.log("The quota for the API key or the number of issued requests has been exceeded.", level = "ERROR")
+                    else:
+                        self.auxiliary.log("There was an error while processing the request: {0}".format(err.code), level="ERROR")
+                    
+                    # clear all remaining items in the queue
+                    while not self.info_queue.empty(): 
+                        await self.info_queue.get()
+                        self.info_queue.task_done()
+
+                self.info_queue.task_done()
+
+        return samples
 
 
     async def get_behavior_report(self):
@@ -184,96 +274,6 @@ class VirusTotal_Search(Artifact):
                     sandbox.parse_report(sample)
 
                 self.behavior_queue.task_done()
-                        
-
-    async def download_samples(self, filename):
-        """ Reads in a list of hashes from a file for subsequent sample download
-
-            :param filename: The name of the file that contains the list of hashes
-        """
-        
-        md5 = re.compile(r"([a-fA-F\d]{32})")
-        sha1 = re.compile(r"([a-fA-F\d]{40})")
-        sha256 = re.compile(r"([a-fA-F\d]{64})")
-
-        samples = []
-        asyncio.create_task(self.get_heartbeat())
-        with open(filename, "r") as f:
-            for data in f:
-                data = data.strip("\n ")
-                if md5.match(data) or sha1.match(data) or sha256.match(data):
-                    # if the entry in the file represents a sample by hash, and the 
-                    # sample is appearing for the first time, add it to the queue
-                    if data not in samples:
-                        await self.info_queue.put(data)
-                        samples.append(data)
-
-        # retrieve summary information and check if the sample exists
-        tasks = []
-        for worker in range(self.options["workers"]):
-            result = tasks.append(asyncio.create_task(self.get_sample_info()))
-                    
-        results = await asyncio.gather(*tasks)
-        await self.info_queue.join()
-        for task in tasks: task.cancel()
-
-        # download artifacts that are existing as well as corresponding behavior reports
-        for worker in results:
-            for sample in worker:
-                if sample is not None:
-                    if self.options["download_samples"]  : await self.sample_queue.put(sample)
-                    if self.options["download_behavior"] : await self.behavior_queue.put(sample)
-
-        tasks = []
-        for worker in range(self.options["workers"]):
-            if self.options["download_behavior"]: tasks.append(asyncio.create_task(self.get_behavior_report()))
-            if self.options["download_samples"]: tasks.append(asyncio.create_task(self.get_sample()))
-                    
-        await asyncio.gather(*tasks)
-        await self.behavior_queue.join()
-        await self.sample_queue.join()
-        for task in tasks: task.cancel()
-
-
-    async def get_sample_info(self):
-        """ Retrieves summary information about a sample
-        """
-        
-        samples = []
-        async with vt.Client(self.options["virustotal"]) as client:
-            while not self.info_queue.empty():
-                try:
-                    sample_id = await self.info_queue.get()
-                    path = os.path.join("/files", sample_id)
-                    
-                    # this call should be always performed to check if the sample exists
-                    # and get context information for a hash value
-                    result = await client.get_object_async(path)
-
-                    sample_report = os.path.join(self.options["info_dir"], sample_id)
-                    super().display_information(result, sample_report)
-
-                    samples.append(result)
-                except vt.error.APIError as err:
-                    if err.code == "NotFoundError":
-                        self.options["auxiliary"].log("Sample was not found: {0}\n".format(sample_id), level = "WARNING")
-                        self.info_queue.task_done()
-                        continue
-                    elif err.code in ["AuthenticationRequiredError", "ForbiddenError", "UserNotActiveError", "WrongCredentialsError"]:
-                        self.auxiliary.log("The API key is not valid for accessing the VirusTotal Private API, or there was a problem with the user account.", level = "ERROR")
-                    elif err.code in ["QuotaExceededError", "TooManyRequestsError"]:
-                        self.auxiliary.log("The quota for the API key or the number of issued requests has been exceeded.", level = "ERROR")
-                    else:
-                        self.auxiliary.log("There was an error while processing the request: {0}".format(err.code), level="ERROR")
-                    
-                    # clear all remaining items in the queue
-                    while not self.info_queue.empty(): 
-                        await self.info_queue.get()
-                        self.info_queue.task_done()
-
-                self.info_queue.task_done()
-
-        return samples
 
 
     async def get_sample(self):
