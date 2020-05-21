@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os.path
+import json
 
 """
     Super class for displaying information about an artifact and / or saving the information to
@@ -228,7 +229,20 @@ class Artifact():
             file_handle = open(filename, "w")
             file_handle.write("{0}\n".format(identifier))
         elif (filename is not None) and (os.path.exists(filename)):
-            self.options["auxiliary"].log("Summary report for sample already exists on disk and is not downloaded again: {0}".format(sample.id), level = "DEBUG")
+            self.options["auxiliary"].log("Summary report for the sample already exists on disk and is not downloaded again: {0}".format(sample.id), level = "DEBUG")
+        
+        # write the raw report to disk if a filename was provided and the report
+        # does not exist yet, otherwise only log but do not rewrite
+        raw_filename = "{0}.raw".format(filename)
+        if (filename is not None) and (not os.path.exists(raw_filename)):
+            try:
+                with open(raw_filename, "w") as f:
+                    json.dump(sample.to_dict(), f)
+            except (IOError, TypeError) as err:
+                self.options["auxiliary"].log("There was an error while saving the raw report to disk for sample: {0} - {1}".format(sample.id, err), level="ERROR")
+        elif (filename is not None) and (os.path.exists(raw_filename)):
+            self.options["auxiliary"].log("The raw report for the sample already exists on disk and is not downloaded again: {0}".format(sample.id), level = "DEBUG")
+
 
         if self.options["csv"] and self.options["verbose"] < 3:
             line = ""

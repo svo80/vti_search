@@ -253,12 +253,16 @@ Written by Stefan Voemel.
 │       │   └── urls.csv          Exorted URLs (if existing)
 │       ├── log.txt               Detailed log file with program runtime messages
 │       ├── reports/              Directory for summary reports and network indicators (*.ioc)
+│       │   ├── <sample>          Textual summary report for a sample
+│       │   ├── <sample.ioc>      Extracted network indicators for a sample
+│       │   ├── <sample.raw>      Static analysis report for a sample in JSON format
 │       ├── samples/              Directory for malware samples
 │   
 ├── lib                           Program libraries
 │   ├── auxiliary.py
 │   ├── sandboxes.py
 │   └── vt.py
+│   
 ├── README.md
 └── vti_search.py                 Main program file
 ```
